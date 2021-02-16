@@ -21,32 +21,37 @@ public class ListStorage extends AbstractStorage<Integer> {
 
     @Override
     protected Integer getSearchKey(String id) {
-        return null;
+        for (Meal meal : storage) {
+            if (meal.getId().equals(id)) {
+                return storage.indexOf(meal);
+            }
+        }
+        return -1;
     }
 
     @Override
     protected boolean isExist(Integer searchKey) {
-        return false;
+        return searchKey > -1;
     }
 
     @Override
     protected void doSave(Integer searchKey, Meal meal) {
-
+        storage.add(meal);
     }
 
     @Override
     protected void doDelete(Integer searchKey) {
-
+        storage.remove((int) searchKey);
     }
 
     @Override
     protected void doUpdate(Integer searchKey, Meal meal) {
-
+        storage.set(searchKey, meal);
     }
 
     @Override
     protected Meal getMeal(Integer searchKey) {
-        return null;
+        return storage.get(searchKey);
     }
 
     @Override

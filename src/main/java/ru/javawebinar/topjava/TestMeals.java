@@ -19,7 +19,6 @@ public class TestMeals {
     );
 
     public List<Meal> getMeals() {
-
         return meals;
     }
 }
