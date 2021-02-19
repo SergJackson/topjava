@@ -7,10 +7,15 @@ import org.springframework.stereotype.Controller;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.inmemory.InMemoryMealRepository;
 import ru.javawebinar.topjava.service.MealService;
-import ru.javawebinar.topjava.util.exception.NotFoundException;
+import ru.javawebinar.topjava.to.MealTo;
+import ru.javawebinar.topjava.util.MealsUtil;
 import ru.javawebinar.topjava.web.SecurityUtil;
 
-import java.util.Collection;
+import java.time.LocalTime;
+import java.util.List;
+
+import static ru.javawebinar.topjava.util.ValidationUtil.assureIdConsistent;
+import static ru.javawebinar.topjava.util.ValidationUtil.checkNew;
 
 @Controller
 public class MealRestController {
@@ -20,36 +25,37 @@ public class MealRestController {
     private MealService service = new MealService(new InMemoryMealRepository());
 
 
-    public Collection<Meal> getAll(Integer userId) {
+    public List<MealTo> getAll() {
         log.info("getAll");
-        if (SecurityUtil.authUserId() != userId) {
-            throw new NotFoundException("You aren't logged in!");
-        }
-        return service.getAll(userId);
+        return MealsUtil.getTos(service.getAll(SecurityUtil.authUserId()), SecurityUtil.authUserCaloriesPerDay());
     }
 
-    public Meal get(Integer userId, int id) {
+    public List<MealTo> getFiltered(LocalTime startTime, LocalTime endTime) {
+        log.info("getAllFiltered startTime {} endTime {}", startTime, endTime);
+        return MealsUtil.getFilteredTos(service.getAll(SecurityUtil.authUserId()), SecurityUtil.authUserCaloriesPerDay(), startTime, endTime);
+    }
+
+    public Meal get(int id) {
         log.info("get {}", id);
-        if (SecurityUtil.authUserId() != userId) {
-            throw new NotFoundException("You aren't logged in!");
-        }
-        return service.get(userId, id);
+        return service.get(SecurityUtil.authUserId(), id);
     }
 
-    public void save(Integer userId, Meal meal) {
-        log.info("save {}", meal);
-        if (SecurityUtil.authUserId() != userId) {
-            throw new NotFoundException("You aren't logged in!");
-        }
-        service.save(userId, meal);
+    public void update(Meal meal, int id) {
+        log.info("update {} with id={}", meal, id);
+        assureIdConsistent(meal, id);
+        service.update(SecurityUtil.authUserId(), meal);
     }
 
-    public void delete(Integer userId, int id) {
+    public Meal create(Meal meal) {
+        log.info("create {}", meal);
+        checkNew(meal);
+        return service.create(SecurityUtil.authUserId(), meal);
+    }
+
+
+    public void delete(int id) {
         log.info("delete {}", id);
-        if (SecurityUtil.authUserId() != userId) {
-            throw new NotFoundException("You aren't logged in!");
-        }
-        service.delete(userId, id);
+        service.delete(SecurityUtil.authUserId(), id);
     }
 
 }
