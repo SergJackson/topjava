@@ -22,7 +22,7 @@ public class MealRestController {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private MealService service = new MealService(new InMemoryMealRepository());
+    private MealService service; // = new MealService(new InMemoryMealRepository());
 
 
     public List<MealTo> getAll() {
