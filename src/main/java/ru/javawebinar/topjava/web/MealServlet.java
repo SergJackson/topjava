@@ -2,6 +2,8 @@ package ru.javawebinar.topjava.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.web.meal.MealRestController;
 
@@ -10,22 +12,33 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class MealServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(MealServlet.class);
-
     private MealRestController controller;
+    private ConfigurableApplicationContext appCtx;
 
     @Override
     public void init() {
         controller = new MealRestController();
+        appCtx = new ClassPathXmlApplicationContext("spring/spring-app.xml");
+        System.out.println("Bean definition names: " + Arrays.toString(appCtx.getBeanDefinitionNames()));
+        controller = appCtx.getBean(MealRestController.class);
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void destroy() {
+        appCtx.close();
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
         String id = request.getParameter("id");
 
@@ -47,6 +60,11 @@ public class MealServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         String action = request.getParameter("action");
+        String startDate = request.getParameter("startDate");
+        String startTime = request.getParameter("startTime");
+        String endDate = request.getParameter("endDate");
+        String endTime = request.getParameter("endTime");
+
         switch (action == null ? "all" : action) {
             case "delete":
                 int id = getId(request);
@@ -65,7 +83,17 @@ public class MealServlet extends HttpServlet {
             case "all":
             default:
                 log.info("getAll");
-                request.setAttribute("meals", controller.getAll());
+                request.setAttribute("userId", SecurityUtil.authUserId());
+                request.setAttribute("startDate", startDate);
+                request.setAttribute("startTime", startTime);
+                request.setAttribute("endDate", endDate);
+                request.setAttribute("endTime", endTime);
+                request.setAttribute("meals", controller.getFiltered(
+                        startDate == null || startDate.equals("") ? null : LocalDate.parse(startDate),
+                        startTime == null || startTime.equals("") ? null : LocalTime.parse(startTime),
+                        endDate == null || endDate.equals("") ? null : LocalDate.parse(endDate),
+                        endTime == null || endTime.equals("") ? null : LocalTime.parse(endTime)
+                ));
                 request.getRequestDispatcher("/meals.jsp").forward(request, response);
                 break;
         }

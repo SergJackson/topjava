@@ -5,68 +5,62 @@ import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryMealRepository implements MealRepository {
-    private static final Comparator<Meal> MEAL_COMPARATOR = Comparator.comparing(Meal::getDateTime, Comparator.reverseOrder());
+    private static final Comparator<Meal> MEAL_COMPARATOR = Comparator.comparing(Meal::getDateTime, Comparator.reverseOrder()).thenComparingInt(Meal::getId);
 
     private final Map<Integer, Map<Integer, Meal>> repository = new ConcurrentHashMap<>();
     private final AtomicInteger counter = new AtomicInteger(0);
-    ReentrantLock reentrantLock = new ReentrantLock();
 
     {
         MealsUtil.meals.forEach(meal -> this.save(1, meal));
+        MealsUtil.meals_2.forEach(meal -> this.save(2, meal));
     }
 
     @Override
     public Meal save(int userId, Meal meal) {
-        Meal m;
-        reentrantLock.lock();
-        try {
-            Map<Integer, Meal> meals = repository.get(userId);
-            if (meals == null) {
-                meals = new ConcurrentHashMap<>();
-                repository.put(userId, meals);
-            }
+        repository.computeIfAbsent(userId, id -> {
+            Map<Integer, Meal> meals = new ConcurrentHashMap<>();
             if (meal.isNew()) {
                 meal.setId(counter.incrementAndGet());
                 meals.put(meal.getId(), meal);
-                m = meal;
+                return meals;
             } else {
-                // handle case: update, but not present in storage
-                m = meals.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
+                meals.computeIfPresent(meal.getId(), (idx, oldMeal) -> meal);
+                return meals;
             }
-        } finally {
-            reentrantLock.unlock();
-        }
-        return m;
+        });
+        repository.computeIfPresent(userId, (id, meals) -> {
+            if (meal.isNew()) {
+                meal.setId(counter.incrementAndGet());
+                meals.put(meal.getId(), meal);
+            } else {
+                meals.computeIfPresent(meal.getId(), (idx, oldMeal) -> meal);
+            }
+            return meals;
+        });
+        return meal;
     }
 
     @Override
     public boolean delete(int userId, int id) {
-        Boolean result = false;
-        reentrantLock.lock();
-        try {
-            Map<Integer, Meal> meals = repository.get(userId);
-            if (meals != null) {
-                result = meals.remove(id) != null;
-            }
-        } finally {
-            reentrantLock.unlock();
+        Map<Integer, Meal> meals = repository.get(userId);
+        if (meals != null) {
+            return meals.remove(id) != null;
         }
-        return result;
+        return false;
     }
 
     @Override
     public Meal get(int userId, int id) {
-        //if (repository.containsKey(userId)) {
         Map<Integer, Meal> meals = repository.get(userId);
         if (meals != null) {
             return meals.get(id);
@@ -76,16 +70,13 @@ public class InMemoryMealRepository implements MealRepository {
 
     @Override
     public List<Meal> getAll(int userId) {
-        //if (repository.containsKey(userId)) {
-        return repository
-                .get(userId)
-                .values()
-                .stream()
-                .sorted(MEAL_COMPARATOR)
-                .collect(Collectors.toList());
-        //}
-        //return new ArrayList<>();
+        Map<Integer, Meal> meals = repository.get(userId);
+        if (meals != null) {
+            return meals.values().stream()
+                    .sorted(MEAL_COMPARATOR)
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
-
 }
 
