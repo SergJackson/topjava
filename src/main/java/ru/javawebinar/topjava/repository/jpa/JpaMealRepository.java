@@ -28,7 +28,10 @@ public class JpaMealRepository implements MealRepository {
             em.persist(meal);
             return meal;
         } else {
-            return em.merge(meal);
+            if (getAll(userId).stream().filter(m -> m.getId().equals(meal.getId())).count() == 1L) {
+                return em.merge(meal);
+            }
+            throw new NotFoundException("This meal belongs another User!");
         }
     }
 
