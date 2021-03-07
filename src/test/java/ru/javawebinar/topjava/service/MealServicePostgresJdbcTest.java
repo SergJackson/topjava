@@ -6,5 +6,5 @@ import static ru.javawebinar.topjava.Profiles.JDBC;
 
 
 @ActiveProfiles(profiles = JDBC)
-public class MealServiceJdbcTest extends MealServiceTest {
+public class MealServicePostgresJdbcTest extends MealServicePostgresTest {
 }

@@ -6,5 +6,5 @@ import static ru.javawebinar.topjava.Profiles.DATAJPA;
 
 
 @ActiveProfiles(profiles = DATAJPA)
-public class MealServiceDataJpaTest extends MealServiceTest {
+public class MealServiceHsqldbDataJpaTest extends MealServiceHsqldbTest {
 }
