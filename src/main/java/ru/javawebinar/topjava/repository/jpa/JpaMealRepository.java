@@ -11,7 +11,7 @@ import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Repository("Jpa")
+@Repository
 @Transactional(readOnly = true)
 public class JpaMealRepository implements MealRepository {
 

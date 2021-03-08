@@ -7,7 +7,7 @@ import ru.javawebinar.topjava.repository.UserRepository;
 
 import java.util.List;
 
-@Repository("DataJpa")
+@Repository
 public class DataJpaUserRepository implements UserRepository {
     private static final Sort SORT_NAME_EMAIL = Sort.by(Sort.Direction.ASC, "name", "email");
 
