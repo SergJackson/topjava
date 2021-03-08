@@ -4,7 +4,6 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static ru.javawebinar.topjava.Profiles.JPA;
 
-
 @ActiveProfiles(profiles = JPA)
-public class MealServicePostgresJpaTest extends MealServicePostgresTest {
+public class MealServiceJpaTest extends MealServiceTest {
 }
