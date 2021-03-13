@@ -4,7 +4,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Repository;
+import ru.javawebinar.topjava.Profiles;
 import ru.javawebinar.topjava.UserTestData;
 import ru.javawebinar.topjava.model.Role;
 import ru.javawebinar.topjava.model.User;
@@ -24,16 +28,49 @@ public abstract class AbstractUserServiceTest extends AbstractServiceTest {
     @Autowired
     protected UserService service;
 
-    @Autowired
-    private CacheManager cacheManager;
-
-    @Autowired
-    protected JpaUtil jpaUtil;
+//    @Autowired
+//    private CacheManager cacheManager;
+//
+//    @Autowired
+//    protected JpaUtil jpaUtil;
+//
+//    @Before
+//    public void setup() {
+//        cacheManager.getCache("users").clear();
+//        jpaUtil.clear2ndLevelHibernateCache();
+//    }
 
     @Before
     public void setup() {
-        cacheManager.getCache("users").clear();
-        jpaUtil.clear2ndLevelHibernateCache();
+        initJpaUtil();
+    }
+
+    protected abstract void initJpaUtil();
+
+    @Profile(Profiles.JDBC)
+    public static class JpaUtilOffAbstractUserServiceTest extends AbstractUserServiceTest {
+        @Override
+        @Bean
+        public void initJpaUtil() {
+        }
+    }
+
+    @Repository
+    @Profile({Profiles.JPA, Profiles.DATAJPA})
+    public static class JpaUtilOnAbstractUserServiceTest extends AbstractUserServiceTest {
+
+        @Autowired
+        private CacheManager cacheManager;
+
+        @Autowired
+        protected JpaUtil jpaUtil;
+
+        @Override
+        @Bean
+        public void initJpaUtil() {
+            cacheManager.getCache("users").clear();
+            jpaUtil.clear2ndLevelHibernateCache();
+        }
     }
 
     @Test
